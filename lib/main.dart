@@ -5,6 +5,7 @@ void main() => runApp(MyApp());
 
 // Get battery level.
 String _batteryLevel = 'Unknown battery level.';
+dynamic _personPayload = 'Unknown person.';
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -51,7 +52,8 @@ class MyHomePage extends StatefulWidget {
 // state object
 class _MyHomePageState extends State<MyHomePage> {
   // method channel: single platform method that returns the battery level
-  static const platform = const MethodChannel('samples.flutter.dev/battery');
+  static const platformBattery = const MethodChannel('samples.flutter.dev/battery');
+  static const platformCitizenCard = const MethodChannel('samples.flutter.dev/citizencard');
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +67,12 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: _getBatteryLevel,
             ),
             Text(_batteryLevel),
+            Divider(),
+            RaisedButton(
+              child: Text('ReadCard'),
+              onPressed: _getPersonPayload,
+            ),
+            Text(_personPayload),
           ],
         ),
       ),
@@ -74,8 +82,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _getBatteryLevel() async {
     String batteryLevel;
     try {
-      final int result = await platform.invokeMethod('getBatteryLevel');
-      batteryLevel = 'Battery level at $result % .';
+      final int result = await platformBattery.invokeMethod('getBatteryLevel');
+      batteryLevel = 'Battery level at $result %';
     } on PlatformException catch (e) {
       batteryLevel = "Failed to get battery level: '${e.message}'.";
     }
@@ -84,4 +92,19 @@ class _MyHomePageState extends State<MyHomePage> {
       _batteryLevel = batteryLevel;
     });
   }
+
+  Future<void> _getPersonPayload() async {
+    dynamic personPayload;
+    try {
+      final dynamic result = await platformCitizenCard.invokeMethod('getCitizenCardData');
+      personPayload = 'Person Payload $result';
+    } on PlatformException catch (e) {
+      personPayload = "Failed to get Person Payload: '${e.message}'.";
+    }
+
+    setState(() {
+      _personPayload = personPayload;
+    });
+  }
+
 }

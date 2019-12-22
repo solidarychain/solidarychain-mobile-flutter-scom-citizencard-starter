@@ -1,5 +1,5 @@
-name: app
-description: A new Flutter project.
+name: SNCitizenCard
+description: Flutter starter project for SCom citizen card SDK
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -27,7 +27,6 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
