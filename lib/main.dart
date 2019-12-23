@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'events.dart';
+
 void main() => runApp(MyApp());
 
 // Get battery level.
 String _batteryLevel = 'Unknown battery level.';
 dynamic _personPayload = 'Unknown person.';
+String _eventResult = '';
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -52,8 +55,10 @@ class MyHomePage extends StatefulWidget {
 // state object
 class _MyHomePageState extends State<MyHomePage> {
   // method channel: single platform method that returns the battery level
-  static const platformBattery = const MethodChannel('samples.flutter.dev/battery');
-  static const platformCitizenCard = const MethodChannel('samples.flutter.dev/citizencard');
+  static const platformBattery =
+      const MethodChannel('samples.flutter.dev/battery');
+  static const platformCitizenCard =
+      const MethodChannel('samples.flutter.dev/citizencard');
 
   static const _channel = const EventChannel('events');
 
@@ -75,6 +80,12 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: _getPersonPayload,
             ),
             Text(_personPayload),
+            Divider(),
+            RaisedButton(
+              child: Text('Playground'),
+              onPressed: _runPlayground,
+            ),
+            Text(_eventResult),
           ],
         ),
       ),
@@ -98,7 +109,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _getPersonPayload() async {
     dynamic personPayload;
     try {
-      final dynamic result = await platformCitizenCard.invokeMethod('getCitizenCardData');
+      final dynamic result =
+          await platformCitizenCard.invokeMethod('getCitizenCardData');
       personPayload = 'Person Payload $result';
     } on PlatformException catch (e) {
       personPayload = "Failed to get Person Payload: '${e.message}'.";
@@ -109,4 +121,25 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  // Call inside a setState({ }) block to be able to reflect changes on screen
+  void log(String logString) {
+    _eventResult += logString.toString() + "\n";
+  }
+
+  // Main function called when playground is run
+  bool running = false;
+
+  void _runPlayground() async {
+    if (running) return;
+    running = true;
+    var cancel = startListening((msg) {
+      setState(() {
+        log(msg);
+      });
+    });
+
+    await Future.delayed(Duration(seconds: 10));
+    cancel();
+    running = false;
+  }
 }
