@@ -55,6 +55,8 @@ class _MyHomePageState extends State<MyHomePage> {
   static const platformBattery = const MethodChannel('samples.flutter.dev/battery');
   static const platformCitizenCard = const MethodChannel('samples.flutter.dev/citizencard');
 
+  static const _channel = const EventChannel('events');
+
   @override
   Widget build(BuildContext context) {
     return Material(
