@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -9,6 +10,7 @@ void main() => runApp(MyApp());
 String _batteryLevel = 'Unknown battery level.';
 dynamic _personPayload = 'Unknown person.';
 String _eventResult = '';
+CancelListening _cancelListening;
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -52,6 +54,12 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
+// Call inside a setState({ }) block to be able to reflect changes on screen
+void log(String logString) {
+  // add to top
+  _eventResult = '${logString.toString()}\n$_eventResult';
+}
+
 // state object
 class _MyHomePageState extends State<MyHomePage> {
   // method channel: single platform method that returns the battery level
@@ -60,7 +68,21 @@ class _MyHomePageState extends State<MyHomePage> {
   static const platformCitizenCard =
       const MethodChannel('samples.flutter.dev/citizencard');
 
-  static const _channel = const EventChannel('events');
+  @override
+  void initState() {
+    super.initState();
+    _cancelListening = startListening((msg) {
+      setState(() {
+        log(msg);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _cancelListening();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,12 +102,26 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: _getPersonPayload,
             ),
             Text(_personPayload),
-            Divider(),
-            RaisedButton(
-              child: Text('Playground'),
-              onPressed: _runPlayground,
+            // Divider(),
+            // RaisedButton(
+            //  child: Text('Playground'),
+            //  onPressed: _runPlayground,
+            // ),
+            new Expanded(
+              flex: 1,
+              child: new SingleChildScrollView(
+                child: FittedBox(
+                  child: new Text(
+                    _eventResult,
+                    style: new TextStyle(
+                      fontSize: 14.0,
+                      color: Colors.black,
+                    ),
+                  ),
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
-            Text(_eventResult),
           ],
         ),
       ),
@@ -121,11 +157,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  // Call inside a setState({ }) block to be able to reflect changes on screen
-  void log(String logString) {
-    _eventResult += logString.toString() + "\n";
-  }
-
+/*
   // Main function called when playground is run
   bool running = false;
 
@@ -142,4 +174,5 @@ class _MyHomePageState extends State<MyHomePage> {
     cancel();
     running = false;
   }
+  */
 }

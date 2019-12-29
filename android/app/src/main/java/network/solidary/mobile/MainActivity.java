@@ -30,7 +30,6 @@ import io.ptech.cc.android.sdk.exported.CitizenCardReader;
 import io.ptech.cc.android.sdk.exported.exceptions.CardException;
 import io.ptech.cc.android.sdk.exported.exceptions.InvalidLicenseException;
 import io.ptech.cc.android.sdk.exported.exceptions.NoCardDetectedException;
-import io.ptech.cc.android.sdk.exported.listeners.OnEventsListener;
 import io.ptech.cc.android.sdk.exported.model.Person;
 
 public class MainActivity extends FlutterActivity {
@@ -44,6 +43,9 @@ public class MainActivity extends FlutterActivity {
   private EventChannel channel;
   // Listeners
   private Map<Object, Runnable> listeners = new HashMap<>();
+  // store EventChannel emitter reference, to be used outside of
+  private EventChannel.EventSink eventChannelEmitter;
+  // private Handler eventChannelHandler;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -122,11 +124,11 @@ public class MainActivity extends FlutterActivity {
 
   private void setupCitizenCardReader() {
     try {
-      String packageName = getApplicationContext().getPackageName();
       String encodedLicense = network.solidary.mobile.BuildConfig.encodedLicense;
       String deviceID = getDeviceId(getApplication());
-      Log.d(TAG, String.format("packageName: %s", packageName));
-      Log.d(TAG, String.format("deviceID: %s", deviceID));
+      //String packageName = getApplicationContext().getPackageName();
+      //Log.i(TAG, String.format("packageName: %s", packageName));
+      //Log.i(TAG, String.format("deviceID: %s", deviceID));
 
       // your application context
       CitizenCardReader.setup(getApplication(),
@@ -135,25 +137,86 @@ public class MainActivity extends FlutterActivity {
         // your license encoded as Base64
         encodedLicense,
         // your deviceID
-        deviceID)
-        .connect(eventType -> {
-          Log.i(TAG, String.format("onEvent: %s", eventType.toString()));
-          if (eventType.equals(OnEventsListener.EventType.CARD_READY)) {
+        deviceID
+      ).connect(eventType -> {
+        Log.i(TAG, String.format("onEvent: %s", eventType.toString()));
+        String message;
+
+        switch (eventType) {
+          case SEARCHING_READER:
+            message = "Searching Reader";
+            Log.e(TAG, message);
+            break;
+          case READER_DISCONNECTED:
+            message = "Reader disconnected";
+            Log.i(TAG, message);
+            break;
+          case REQUESTING_USB_PERMISSIONS:
+            message = "Requesting usb permissions";
+            Log.i(TAG, message);
+            break;
+          case USB_PERMISSIONS_REFUSED:
+            message = "Usb permissions refused";
+            Log.e(TAG, message);
+            break;
+          case READER_POWERING_UP:
+            message = "Reader powering up";
+            Log.i(TAG, message);
+            break;
+          case READER_POWERUP_FAILED:
+            message = "Reader power up failed";
+            Log.e(TAG, message);
+            break;
+          case READER_READY:
+            message = "Reader ready";
+            Log.i(TAG, message);
+            break;
+          case CARD_POWERING_UP:
+            message = "Card powering up";
+            Log.i(TAG, message);
+            break;
+          case CARD_STATUS_UNKNOWN:
+            message = "Card status unknown";
+            Log.e(TAG, message);
+            break;
+          case CARD_INITIALIZING:
+            message = "Card initializing";
+            Log.i(TAG, message);
+            break;
+          case CARD_DETECTED:
+            message = "Card detected";
+            Log.i(TAG, message);
+            break;
+          case CARD_READY:
+            message = "Card ready";
+            Log.i(TAG, message);
             // readCard();
-          } else if (eventType.equals(OnEventsListener.EventType.CARD_DETECTED)) {
-            String message = "Citizen card detected";
+            break;
+          case CARD_REMOVED:
+            message = "Card removed";
             Log.i(TAG, message);
-          } else if (eventType.equals(OnEventsListener.EventType.CARD_REMOVED)) {
-            String message = "Citizen card removed";
-            Log.i(TAG, message);
-          }
-        });
+            break;
+          case CARD_ERROR:
+            message = "Card error";
+            Log.e(TAG, message);
+            break;
+          case BLUETOOTH_PAIRING_CORRUPTED:
+            message = "Bluetooth pairing corrupt";
+            Log.e(TAG, message);
+            break;
+        }
+        // emmit event
+        if (eventChannelEmitter != null) {
+          eventChannelEmitter.success(eventType.toString());
+        }
+      });
     } catch (InvalidLicenseException e) {
-      Log.i(TAG, "Detected invalid license: " + e.getMessage());
+      Log.e(TAG, "Detected invalid license: " + e.getMessage());
     }
   }
 
   void startListening(Object listener, EventChannel.EventSink emitter) {
+    eventChannelEmitter = emitter;
     // Prepare a timer like self calling task
     final Handler handler = new Handler();
     listeners.put(listener, new Runnable() {
@@ -161,13 +224,13 @@ public class MainActivity extends FlutterActivity {
       public void run() {
         if (listeners.containsKey(listener)) {
           // Send some value to callback
-          emitter.success("Hello listener! " + (System.currentTimeMillis() / 1000));
-          handler.postDelayed(this, 1000);
+          //emitter.success("Hello listener! " + (System.currentTimeMillis() / 1000));
+          //handler.postDelayed(this, 1000);
         }
       }
     });
     // Run task
-    handler.postDelayed(listeners.get(listener), 1000);
+    //handler.postDelayed(listeners.get(listener), 1000);
   }
 
   void cancelListening(Object listener) {

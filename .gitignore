@@ -36,5 +36,9 @@ lib/generated_plugin_registrant.dart
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 
+# don't expose secrets
 android/secrets.properties
-android/app/libs/
+# don't expose scom library
+android/app/libs/cc-android-sdk-1.6.0.aar
+# samples
+.sampleprojects
