@@ -16,7 +16,8 @@ void main() => runApp(MyApp());
 String _batteryLevel = '';
 String _lastCardEventTypeStatus = '';
 String _logContent = '';
-dynamic _readCardFunction = null;
+// store function or null, to enable/disable ui component
+dynamic _readCardFunction;
 CancelListening _cancelListening;
 bool _running = false;
 
