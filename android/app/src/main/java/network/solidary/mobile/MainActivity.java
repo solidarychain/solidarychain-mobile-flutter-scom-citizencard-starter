@@ -11,6 +11,7 @@ import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 
@@ -37,22 +38,24 @@ public class MainActivity extends FlutterActivity {
   private static final String TAG = "network.solidary.mobile";
   final String REMOTE_HOST_ADDRESS = "https://api.citizencard.cadsh.com";
   // define method channel: Make sure to use the same channel name as was used on the Flutter client side.
-  private static final String CHANNEL = "samples.flutter.dev/battery";
-  private static final String CHANNEL_CITIZEN_CARD = "samples.flutter.dev/citizencard";
+  private static final String PLATFORM_EVENT_CHANNEL = "channel-events";
+  private static final String METHOD_CHANNEL_BATTERY = "network.solidary.mobile/battery";
+  private static final String METHOD_CHANNEL_CITIZEN_CARD = "network.solidary.mobile/citizencard";
   // event channel
   private EventChannel channel;
   // Listeners
   private Map<Object, Runnable> listeners = new HashMap<>();
   // store EventChannel emitter reference, to be used outside of
   private EventChannel.EventSink eventChannelEmitter;
-  // private Handler eventChannelHandler;
+  // timer
+  private static final int timerInterval = 5000;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    // Prepare channel
-    channel = new EventChannel(getFlutterEngine().getDartExecutor().getBinaryMessenger(), "events");
+    // Prepare channel: single instance to EventChannel.StreamHandler interface grabs all listener request by itself
+    channel = new EventChannel(getFlutterEngine().getDartExecutor().getBinaryMessenger(), PLATFORM_EVENT_CHANNEL);
     channel.setStreamHandler(new EventChannel.StreamHandler() {
       @Override
       public void onListen(Object listener, EventChannel.EventSink eventSink) {
@@ -74,7 +77,7 @@ public class MainActivity extends FlutterActivity {
     GeneratedPluginRegistrant.registerWith(flutterEngine);
 
     // create a MethodChannel and set a MethodCallHandler inside the onCreate() method
-    new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL)
+    new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), METHOD_CHANNEL_BATTERY)
       .setMethodCallHandler(
         (call, result) -> {
           // Note: this method is invoked on the main thread.
@@ -93,13 +96,38 @@ public class MainActivity extends FlutterActivity {
       );
 
     // create a MethodChannel and set a MethodCallHandler inside the onCreate() method
-    new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL_CITIZEN_CARD)
+    new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), METHOD_CHANNEL_CITIZEN_CARD)
       .setMethodCallHandler(
         (call, result) -> {
           // Note: this method is invoked on the main thread.
           if (call.method.equals("getCitizenCardData")) {
             PersonPayload payload = getCitizenCardData();
-            result.success(payload);
+            HashMap<String, String> hashmap = new HashMap<String, String>();
+            hashmap.put("country", payload.getCountry());
+            hashmap.put("documentType", payload.getDocumentType());
+            hashmap.put("documentNumber", payload.getDocumentNumber());
+            hashmap.put("pan", payload.getPan());
+            hashmap.put("cardVersion", payload.getCardVersion());
+            hashmap.put("emissionDate", payload.getEmissionDate());
+            hashmap.put("requestLocation", payload.getRequestLocation());
+            hashmap.put("expirationDate", payload.getExpirationDate());
+            hashmap.put("lastName", payload.getLastName());
+            hashmap.put("firstName", payload.getFirstName());
+            hashmap.put("gender", payload.getGender());
+            hashmap.put("nationality", payload.getNationality());
+            hashmap.put("birthDate", payload.getBirthDate());
+            hashmap.put("height", payload.getHeight());
+            hashmap.put("identityNumber", payload.getIdentityNumber());
+            hashmap.put("motherLastName", payload.getMotherLastName());
+            hashmap.put("motherFirstName", payload.getMotherFirstName());
+            hashmap.put("fatherLastName", payload.getFatherLastName());
+            hashmap.put("fatherFirstName", payload.getFatherFirstName());
+            hashmap.put("fiscalNumber", payload.getFiscalNumber());
+            hashmap.put("socialSecurityNumber", payload.getSocialSecurityNumber());
+            hashmap.put("beneficiaryNumber", payload.getBeneficiaryNumber());
+            hashmap.put("otherInformation", payload.getOtherInformation());
+            hashmap.put("cardType", payload.getCardType());
+            result.success(hashmap);
           } else {
             result.notImplemented();
           }
@@ -140,74 +168,60 @@ public class MainActivity extends FlutterActivity {
         deviceID
       ).connect(eventType -> {
         Log.i(TAG, String.format("onEvent: %s", eventType.toString()));
-        String message;
+        String message = "Channel: Unknown Message";
 
         switch (eventType) {
           case SEARCHING_READER:
-            message = "Searching Reader";
-            Log.e(TAG, message);
+            message = "Channel: Searching Reader";
             break;
           case READER_DISCONNECTED:
-            message = "Reader disconnected";
-            Log.i(TAG, message);
+            message = "Channel: Reader disconnected";
             break;
           case REQUESTING_USB_PERMISSIONS:
-            message = "Requesting usb permissions";
-            Log.i(TAG, message);
+            message = "Channel: Requesting usb permissions";
             break;
           case USB_PERMISSIONS_REFUSED:
-            message = "Usb permissions refused";
-            Log.e(TAG, message);
+            message = "Channel: Usb permissions refused";
             break;
           case READER_POWERING_UP:
-            message = "Reader powering up";
-            Log.i(TAG, message);
+            message = "Channel: Reader powering up";
             break;
           case READER_POWERUP_FAILED:
-            message = "Reader power up failed";
-            Log.e(TAG, message);
+            message = "Channel: Reader power up failed";
             break;
           case READER_READY:
-            message = "Reader ready";
-            Log.i(TAG, message);
+            message = "Channel: Reader ready";
             break;
           case CARD_POWERING_UP:
-            message = "Card powering up";
-            Log.i(TAG, message);
+            message = "Channel: Card powering up";
             break;
           case CARD_STATUS_UNKNOWN:
-            message = "Card status unknown";
-            Log.e(TAG, message);
+            message = "Channel: Card status unknown";
             break;
           case CARD_INITIALIZING:
-            message = "Card initializing";
-            Log.i(TAG, message);
+            message = "Channel: Card initializing";
             break;
           case CARD_DETECTED:
-            message = "Card detected";
-            Log.i(TAG, message);
+            message = "Channel: Card detected";
             break;
           case CARD_READY:
-            message = "Card ready";
-            Log.i(TAG, message);
-            // readCard();
+            message = "Channel: Card ready";
+            // getCitizenCardData();
             break;
           case CARD_REMOVED:
-            message = "Card removed";
-            Log.i(TAG, message);
+            message = "Channel: Card removed";
             break;
           case CARD_ERROR:
-            message = "Card error";
-            Log.e(TAG, message);
+            message = "Channel: Card error";
             break;
           case BLUETOOTH_PAIRING_CORRUPTED:
-            message = "Bluetooth pairing corrupt";
-            Log.e(TAG, message);
+            message = "Channel: Bluetooth pairing corrupt";
             break;
         }
+        Log.i(TAG, message);
         // emmit event
         if (eventChannelEmitter != null) {
-          eventChannelEmitter.success(eventType.toString());
+          new Handler(Looper.getMainLooper()).post(() -> eventChannelEmitter.success(eventType.toString()));
         }
       });
     } catch (InvalidLicenseException e) {
@@ -216,6 +230,7 @@ public class MainActivity extends FlutterActivity {
   }
 
   void startListening(Object listener, EventChannel.EventSink emitter) {
+    // store emitter reference
     eventChannelEmitter = emitter;
     // Prepare a timer like self calling task
     final Handler handler = new Handler();
@@ -224,13 +239,13 @@ public class MainActivity extends FlutterActivity {
       public void run() {
         if (listeners.containsKey(listener)) {
           // Send some value to callback
-          //emitter.success("Hello listener! " + (System.currentTimeMillis() / 1000));
-          //handler.postDelayed(this, 1000);
+          emitter.success("Hello listener! " + (System.currentTimeMillis() / timerInterval));
+          handler.postDelayed(this, timerInterval);
         }
       }
     });
     // Run task
-    //handler.postDelayed(listeners.get(listener), 1000);
+    handler.postDelayed(listeners.get(listener), timerInterval);
   }
 
   void cancelListening(Object listener) {

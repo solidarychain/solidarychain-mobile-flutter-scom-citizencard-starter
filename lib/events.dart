@@ -1,6 +1,8 @@
 import 'package:flutter/services.dart';
 
-const _channel = const EventChannel('events');
+import 'constants.dart';
+
+const _channel = const EventChannel(PLATFORM_EVENT_CHANNEL);
 
 typedef void Listener(dynamic msg);
 typedef void CancelListening();

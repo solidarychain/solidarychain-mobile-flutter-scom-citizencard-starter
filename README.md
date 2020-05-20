@@ -1,16 +1,13 @@
-# app
+# README
 
-A new Flutter project.
+## Quick start if have secrets.properties and scom cc-android-sdk-1.6.0.aar
 
-## Getting Started
+this files are outside repo, to fast startup copy below files and sync/build project to generate BuildConfig
 
-This project is a starting point for a Flutter application.
+./solidarynetwork-mobile-flutter-scom-citizencard-starter/android/secrets.properties
+./solidarynetwork-mobile-flutter-scom-citizencard-starter/android/app/libs/cc-android-sdk-1.6.0.aar
 
-A few resources to get you started if this is your first Flutter project:
+BuildConfig is generated when build project
+String encodedLicense = network.solidary.mobile.BuildConfig.encodedLicense;
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+sync project, and use in project with, and build

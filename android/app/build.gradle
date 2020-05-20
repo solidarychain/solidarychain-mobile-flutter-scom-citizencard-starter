@@ -55,6 +55,12 @@ android {
     }
 }
 
+repositories {
+    flatDir {
+        dirs 'libs'
+    }
+}
+
 flutter {
     source '../..'
 }
