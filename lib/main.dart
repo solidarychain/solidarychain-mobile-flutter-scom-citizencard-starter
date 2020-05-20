@@ -70,9 +70,9 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         log(msg);
         if (cardEventType.containsKey(msg)) {
-          _lastCardEventTypeStatus = msg;
           // enable/disable button
-          _readCardFunction = (enumTypeFromString('cardEventTypeState.$msg') == cardEventTypeState.CARD_READY) ? _readCardFunction : null;
+          _readCardFunction = (enumTypeFromString(msg) == cardEventTypeState.CARD_READY) ? _getPersonPayload : null;
+          _lastCardEventTypeStatus = msg;
         }
       });
     });
