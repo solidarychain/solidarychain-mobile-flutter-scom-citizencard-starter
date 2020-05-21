@@ -1,6 +1,7 @@
 package network.solidary.mobile;
 
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
 
 import io.ptech.cc.android.sdk.exported.model.Person;
 
@@ -45,6 +46,38 @@ class PersonPayload extends Person {
     setBeneficiaryNumber(person.getBeneficiaryNumber());
     setOtherInformation(person.getOtherInformation());
   }
+
+  // get hashMap to send respond to platform channel flutter
+  public HashMap<String, String> getHashMap() {
+    HashMap<String, String> hashMap = new HashMap<String, String>();
+    hashMap.put("country", this.getCountry());
+    hashMap.put("documentType", this.getDocumentType());
+    hashMap.put("documentNumber", this.getDocumentNumber());
+    hashMap.put("pan", this.getPan());
+    hashMap.put("cardVersion", this.getCardVersion());
+    hashMap.put("emissionDate", this.getEmissionDate());
+    hashMap.put("requestLocation", this.getRequestLocation());
+    hashMap.put("expirationDate", this.getExpirationDate());
+    hashMap.put("lastName", this.getLastName());
+    hashMap.put("firstName", this.getFirstName());
+    hashMap.put("gender", this.getGender());
+    hashMap.put("nationality", this.getNationality());
+    hashMap.put("birthDate", this.getBirthDate());
+    hashMap.put("height", this.getHeight());
+    hashMap.put("identityNumber", this.getIdentityNumber());
+    hashMap.put("motherLastName", this.getMotherLastName());
+    hashMap.put("motherFirstName", this.getMotherFirstName());
+    hashMap.put("fatherLastName", this.getFatherLastName());
+    hashMap.put("fatherFirstName", this.getFatherFirstName());
+    hashMap.put("fiscalNumber", this.getFiscalNumber());
+    hashMap.put("socialSecurityNumber", this.getSocialSecurityNumber());
+    hashMap.put("beneficiaryNumber", this.getBeneficiaryNumber());
+    hashMap.put("otherInformation", this.getOtherInformation());
+    hashMap.put("cardType", this.getCardType());
+    return hashMap;
+  }
+
+  // getters and setters
 
   public String getCardType() {
     return cardType;

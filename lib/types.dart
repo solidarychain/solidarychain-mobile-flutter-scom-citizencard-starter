@@ -1,4 +1,4 @@
-enum cardEventTypeState {
+enum CardEventTypeState {
   SEARCHING_READER,
   READER_DISCONNECTED,
   REQUESTING_USB_PERMISSIONS,
@@ -16,12 +16,13 @@ enum cardEventTypeState {
   BLUETOOTH_PAIRING_CORRUPTED,
 }
 
-cardEventTypeState enumTypeFromString(String typeString) => cardEventTypeState.values
-    .firstWhere((type) => type.toString() == "cardEventTypeState." + typeString);
-String enumTypeToString(cardEventTypeState type) => type.toString().split(".")[1];
+CardEventTypeState enumTypeFromString(String typeString) =>
+    CardEventTypeState.values.firstWhere((type) => type.toString() == 'CardEventTypeState.' + typeString);
+
+String enumTypeToString(CardEventTypeState type) => type.toString().split(".")[1];
 
 // Map using Map Literals
-Map<String, String> cardEventType = {
+Map<String, String> CardEventMapState = {
   'SEARCHING_READER': 'SEARCHING_READER',
   'READER_DISCONNECTED': 'READER_DISCONNECTED',
   'REQUESTING_USB_PERMISSIONS': 'REQUESTING_USB_PERMISSIONS',

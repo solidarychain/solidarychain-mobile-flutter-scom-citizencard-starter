@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:SNCitizenCard/payloads/user_payload.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,7 +9,7 @@ import 'package:flutter/widgets.dart';
 import 'constants.dart';
 import 'types.dart';
 import 'events.dart';
-import 'person_payload.dart';
+import 'payloads/person_payload.dart';
 
 void main() => runApp(MyApp());
 
@@ -17,9 +18,10 @@ String _batteryLevel = '';
 String _lastCardEventTypeStatus = '';
 String _logContent = '';
 // store function or null, to enable/disable ui component
-dynamic _readCardFunction;
+dynamic _getCitizenCardDataFunction;
 CancelListening _cancelListening;
 bool _running = false;
+CardEventTypeState _currentState;
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -68,12 +70,16 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     _cancelListening = startListening((msg) {
+      log(msg);
       setState(() {
-        log(msg);
-        if (cardEventType.containsKey(msg)) {
-          // enable/disable button
-          _readCardFunction = (enumTypeFromString(msg) == cardEventTypeState.CARD_READY) ? _getPersonPayload : null;
+        // check mag is a cardEventType
+        if (CardEventMapState.containsKey(msg)) {
+          // update ui component
           _lastCardEventTypeStatus = msg;
+          // assign _currentState
+          _currentState = enumTypeFromString(msg);
+          // enable/disable button
+          _getCitizenCardDataFunction = (_currentState == CardEventTypeState.CARD_READY) ? _getCitizenCardData : null;
         }
       });
     });
@@ -105,11 +111,15 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               RaisedButton(
                 child: Text('ReadCard'),
-                onPressed: _readCardFunction,
+                onPressed: _getCitizenCardDataFunction,
               ),
               Padding(
                 padding: const EdgeInsets.only(top: 5.0, bottom: 5.0),
                 child: Text(_lastCardEventTypeStatus),
+              ),
+              RaisedButton(
+                child: Text('Send/Receive Map/Json'),
+                onPressed: _sendReceiveMapJson,
               ),
               RaisedButton(
                 child: Text('Playground'),
@@ -147,7 +157,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _getBatteryLevel() async {
     String batteryLevel;
     try {
-      final int result = await platformBattery.invokeMethod('getBatteryLevel');
+      final int result = await platformBattery.invokeMethod(METHOD_CHANNEL_BATTERY_GET_BATTERY_LEVEL);
       batteryLevel = 'Battery level at $result %';
     } on PlatformException catch (e) {
       batteryLevel = "Failed to get battery level: '${e.message}'.";
@@ -158,20 +168,39 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Future<void> _getPersonPayload() async {
+  Future<void> _getCitizenCardData() async {
     try {
-      final Map<String, dynamic> result = await platformCitizenCard.invokeMapMethod('getCitizenCardData');
+      setState(() {
+        // disable button
+        _getCitizenCardDataFunction = null;
+      });
+
+      final Map<String, dynamic> result =
+          await platformCitizenCard.invokeMapMethod(METHOD_CHANNEL_CITIZEN_CARD_GET_CITIZEN_CARD_DATA);
       setState(() {
         var person = Person.fromJson(result);
-        // eventResult log
         log('${person.firstName}, ${person.lastName}');
+        // enable/disable button after readCard
+        _getCitizenCardDataFunction = (_currentState == CardEventTypeState.CARD_READY) ? _getCitizenCardData : null;
       });
     } on PlatformException catch (e) {
       log('Failed to get Person Payload: ${e.message}.');
     }
   }
 
-// Main function called when playground is run
+  Future<void> _sendReceiveMapJson() async {
+    try {
+      final Map<String, dynamic> result = await platformCitizenCard.invokeMapMethod(
+          METHOD_CHANNEL_CITIZEN_CARD_SEND_RECEIVE_MAP_JSON_TEST,
+          METHOD_CHANNEL_CITIZEN_CARD_SEND_RECEIVE_MAP_JSON_TEST_DATA);
+      var user = User.fromJson(result);
+      log('${user.userDob}, ${user.userDescription}');
+    } on PlatformException catch (e) {
+      log('Failed to get User Payload: ${e.message}.');
+    }
+  }
+
+  // Main function called when playground is run
   void _runPlayground() async {
     if (_running) return;
     _running = true;

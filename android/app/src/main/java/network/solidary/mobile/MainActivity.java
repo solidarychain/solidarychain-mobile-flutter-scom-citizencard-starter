@@ -37,10 +37,15 @@ public class MainActivity extends FlutterActivity {
 
   private static final String TAG = "network.solidary.mobile";
   final String REMOTE_HOST_ADDRESS = "https://api.citizencard.cadsh.com";
+  // flutter/android constants: must be inSync with flutter/android
   // define method channel: Make sure to use the same channel name as was used on the Flutter client side.
   private static final String PLATFORM_EVENT_CHANNEL = "channel-events";
   private static final String METHOD_CHANNEL_BATTERY = "network.solidary.mobile/battery";
+  private static final String METHOD_CHANNEL_BATTERY_GET_BATTERY_LEVEL = "getBatteryLevel";
   private static final String METHOD_CHANNEL_CITIZEN_CARD = "network.solidary.mobile/citizencard";
+  private static final String METHOD_CHANNEL_CITIZEN_CARD_GET_CITIZEN_CARD_DATA = "getCitizenCardData";
+  private static final String METHOD_CHANNEL_CITIZEN_CARD_SEND_RECEIVE_MAP_JSON_TEST = "sendReceiveMapJsonTest";
+
   // event channel
   private EventChannel channel;
   // Listeners
@@ -60,6 +65,8 @@ public class MainActivity extends FlutterActivity {
       @Override
       public void onListen(Object listener, EventChannel.EventSink eventSink) {
         startListening(listener, eventSink);
+        // require to initialize citizenCardReader after initialize eventChannel, init card and don't send initial events to flutter
+        setupCitizenCardReader();
       }
 
       @Override
@@ -67,9 +74,6 @@ public class MainActivity extends FlutterActivity {
         cancelListening(listener);
       }
     });
-
-    // initialize citizenCardReader
-    setupCitizenCardReader();
   }
 
   @Override
@@ -78,61 +82,45 @@ public class MainActivity extends FlutterActivity {
 
     // create a MethodChannel and set a MethodCallHandler inside the onCreate() method
     new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), METHOD_CHANNEL_BATTERY)
-      .setMethodCallHandler(
-        (call, result) -> {
-          // Note: this method is invoked on the main thread.
-          if (call.method.equals("getBatteryLevel")) {
-            int batteryLevel = getBatteryLevel();
+        .setMethodCallHandler(
+            (call, result) -> {
+              // Note: this method is invoked on the main thread.
+              if (call.method.equals(METHOD_CHANNEL_BATTERY_GET_BATTERY_LEVEL)) {
+                int batteryLevel = getBatteryLevel();
 
-            if (batteryLevel != -1) {
-              result.success(batteryLevel);
-            } else {
-              result.error("UNAVAILABLE", "Battery level not available.", null);
+                if (batteryLevel != -1) {
+                  result.success(batteryLevel);
+                } else {
+                  result.error("UNAVAILABLE", "Battery level not available.", null);
+                }
+              } else {
+                result.notImplemented();
+              }
             }
-          } else {
-            result.notImplemented();
-          }
-        }
-      );
+        );
 
     // create a MethodChannel and set a MethodCallHandler inside the onCreate() method
     new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), METHOD_CHANNEL_CITIZEN_CARD)
-      .setMethodCallHandler(
-        (call, result) -> {
-          // Note: this method is invoked on the main thread.
-          if (call.method.equals("getCitizenCardData")) {
-            PersonPayload payload = getCitizenCardData();
-            HashMap<String, String> hashmap = new HashMap<String, String>();
-            hashmap.put("country", payload.getCountry());
-            hashmap.put("documentType", payload.getDocumentType());
-            hashmap.put("documentNumber", payload.getDocumentNumber());
-            hashmap.put("pan", payload.getPan());
-            hashmap.put("cardVersion", payload.getCardVersion());
-            hashmap.put("emissionDate", payload.getEmissionDate());
-            hashmap.put("requestLocation", payload.getRequestLocation());
-            hashmap.put("expirationDate", payload.getExpirationDate());
-            hashmap.put("lastName", payload.getLastName());
-            hashmap.put("firstName", payload.getFirstName());
-            hashmap.put("gender", payload.getGender());
-            hashmap.put("nationality", payload.getNationality());
-            hashmap.put("birthDate", payload.getBirthDate());
-            hashmap.put("height", payload.getHeight());
-            hashmap.put("identityNumber", payload.getIdentityNumber());
-            hashmap.put("motherLastName", payload.getMotherLastName());
-            hashmap.put("motherFirstName", payload.getMotherFirstName());
-            hashmap.put("fatherLastName", payload.getFatherLastName());
-            hashmap.put("fatherFirstName", payload.getFatherFirstName());
-            hashmap.put("fiscalNumber", payload.getFiscalNumber());
-            hashmap.put("socialSecurityNumber", payload.getSocialSecurityNumber());
-            hashmap.put("beneficiaryNumber", payload.getBeneficiaryNumber());
-            hashmap.put("otherInformation", payload.getOtherInformation());
-            hashmap.put("cardType", payload.getCardType());
-            result.success(hashmap);
-          } else {
-            result.notImplemented();
-          }
-        }
-      );
+        .setMethodCallHandler(
+            (call, result) -> {
+              // Note: this method is invoked on the main thread.
+              if (call.method.equals(METHOD_CHANNEL_CITIZEN_CARD_GET_CITIZEN_CARD_DATA)) {
+              //// emmit event on mainLooper
+              //new Handler(Looper.getMainLooper()).post(() -> {
+                // call  getCitizenCardData
+                PersonPayload payload = getCitizenCardData();
+                // get hashMap
+                result.success(payload.getHashMap());
+              //});
+              } else if (call.method.equals(METHOD_CHANNEL_CITIZEN_CARD_SEND_RECEIVE_MAP_JSON_TEST)) {
+                User user = new User(((HashMap<String, String>) call.arguments));
+                // get hashMap
+                result.success(user.getHashMap());
+              } else {
+                result.notImplemented();
+              }
+            }
+        );
   }
 
   private int getBatteryLevel() {
@@ -142,9 +130,9 @@ public class MainActivity extends FlutterActivity {
       batteryLevel = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
     } else {
       Intent intent = new ContextWrapper(getApplicationContext()).
-        registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+          registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
       batteryLevel = (intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) * 100) /
-        intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+          intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
     }
 
     return batteryLevel;
@@ -154,18 +142,18 @@ public class MainActivity extends FlutterActivity {
     try {
       String encodedLicense = network.solidary.mobile.BuildConfig.encodedLicense;
       String deviceID = getDeviceId(getApplication());
-      //String packageName = getApplicationContext().getPackageName();
-      //Log.i(TAG, String.format("packageName: %s", packageName));
-      //Log.i(TAG, String.format("deviceID: %s", deviceID));
+      String packageName = getApplicationContext().getPackageName();
+      Log.i(TAG, String.format("packageName: %s", packageName));
+      Log.i(TAG, String.format("deviceID: %s", deviceID));
 
       // your application context
       CitizenCardReader.setup(getApplication(),
-        // the base url to the signatures server
-        REMOTE_HOST_ADDRESS,
-        // your license encoded as Base64
-        encodedLicense,
-        // your deviceID
-        deviceID
+          // the base url to the signatures server
+          REMOTE_HOST_ADDRESS,
+          // your license encoded as Base64
+          encodedLicense,
+          // your deviceID
+          deviceID
       ).connect(eventType -> {
         Log.i(TAG, String.format("onEvent: %s", eventType.toString()));
         String message = "Channel: Unknown Message";
@@ -219,7 +207,7 @@ public class MainActivity extends FlutterActivity {
             break;
         }
         Log.i(TAG, message);
-        // emmit event
+        // emmit event on mainLooper
         if (eventChannelEmitter != null) {
           new Handler(Looper.getMainLooper()).post(() -> eventChannelEmitter.success(eventType.toString()));
         }
@@ -256,7 +244,7 @@ public class MainActivity extends FlutterActivity {
   @SuppressLint("HardwareIds")
   public static String getDeviceId(Context context) {
     return Settings.Secure.getString(
-      context.getContentResolver(), Settings.Secure.ANDROID_ID);
+        context.getContentResolver(), Settings.Secure.ANDROID_ID);
   }
 
   private PersonPayload getCitizenCardData() {
