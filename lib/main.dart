@@ -21,6 +21,8 @@ String _logContent = '';
 dynamic _getCitizenCardDataFunction;
 CancelListening _cancelListening;
 bool _running = false;
+// hide all platform messages
+bool _showHeartBeatMessagesPlatformChannel = false;
 CardEventTypeState _currentState;
 
 class MyApp extends StatelessWidget {
@@ -69,16 +71,21 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    // startListening platform channel
     _cancelListening = startListening((msg) {
-      log(msg);
+      // log receiving messages from platform channel
+      if (_showHeartBeatMessagesPlatformChannel) log("platform channel message: '$msg'.");
+
       setState(() {
-        // check mag is a cardEventType
+        // check msg is a cardEventType
         if (CardEventMapState.containsKey(msg)) {
           // update ui component
           _lastCardEventTypeStatus = msg;
           // assign _currentState
           _currentState = enumTypeFromString(msg);
-          // enable/disable button
+          // warn only enable if CARD_READY, not on READER_READY, on boot always disabled even we have a card on reader, we must remove and insert card on app start
+          // this is because we never catch the CARD_READY
+          // enable/disable button, assigning the _getCitizenCardData function or null to be disabled
           _getCitizenCardDataFunction = (_currentState == CardEventTypeState.CARD_READY) ? _getCitizenCardData : null;
         }
       });
@@ -137,7 +144,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       child: new Text(
                         _logContent,
                         style: new TextStyle(
-                          fontSize: 8.0,
+                          fontSize: 12.0,
                           color: Colors.black87,
                         ),
                         textAlign: TextAlign.left,
@@ -179,7 +186,8 @@ class _MyHomePageState extends State<MyHomePage> {
           await platformCitizenCard.invokeMapMethod(METHOD_CHANNEL_CITIZEN_CARD_GET_CITIZEN_CARD_DATA);
       setState(() {
         var person = Person.fromJson(result);
-        log('${person.firstName}, ${person.lastName}');
+        // output card data
+        log('${person.firstName}, ${person.lastName}, ${person.identityNumber}, ${person.fiscalNumber}, ${person.beneficiaryNumber}');
         // enable/disable button after readCard
         _getCitizenCardDataFunction = (_currentState == CardEventTypeState.CARD_READY) ? _getCitizenCardData : null;
       });
